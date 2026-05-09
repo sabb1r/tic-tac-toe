@@ -95,6 +95,7 @@ def critical_position(position):
 # %% Main Code
 
 print('First player will play for "X", while the second player will play for "O"')     
+print('Enter position as - topL, topM, topR, midL, midM, midR, botL, botM, botR')
 while True:
      player = input('Who will play first? (type "c" for computer or "u" for you): ')
      if player == 'c' or player == 'u':
