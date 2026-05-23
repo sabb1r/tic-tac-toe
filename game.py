@@ -1,6 +1,8 @@
 from tkinter import *
 from tkinter import ttk
 from PIL import Image, ImageTk
+import random
+import time
 
 def initiate():
 
@@ -76,13 +78,11 @@ def start_game(player1, player2):
     def is_winner(position_set):
         if len(position_set) < 3:
             return False
-        
         for i in range(3):
             row = [x for x in position_set if x[0] == i]
             col = [x for x in position_set if x[1] == i]
             if len(row) == 3 or len(col) == 3:
                 return True
-        
         if (1, 1) in position_set:
             if (0, 0) in position_set and (2, 2) in position_set:
                 return True
@@ -90,9 +90,10 @@ def start_game(player1, player2):
                 return True
         return False
 
-    def move_selected(root, btn, pos_x, pos_y):
+    def move_selected(pos_x, pos_y):
         nonlocal counter
         nonlocal result
+        btn = button_set[pos_x][pos_y]
         if counter % 2:
             btn['image'] = round_image
             player2_moves.add((pos_x, pos_y))
@@ -104,9 +105,23 @@ def start_game(player1, player2):
             if is_winner(player1_moves):
                 result['text'] = 'Player 1 is winner'
         btn.state(['disabled'])
+        remaining_moves.remove((pos_x, pos_y))
         counter += 1
         if counter == 9:
             result['text'] = 'Match is drawn'
+        if player1 == 'computer' or player2 == 'computer':
+            computer_moves()
+
+    def computer_moves():
+        # time.sleep(2)
+        if mode == 'easy':
+            selection = random.choice(remaining_moves)
+            btn = button_set[selection[0]][selection[1]]
+            btn.invoke()
+        else:
+            pass
+
+
 
     root = Tk()
     root.title('Tic Tac Toe')
@@ -119,7 +134,7 @@ def start_game(player1, player2):
 
     canvas = Canvas(btn_frame, height=275, width=275)
     canvas.grid(row=0, column=0, sticky=NSEW)
-    
+
     cross_image = ImageTk.PhotoImage(Image.open('./resource/cross.png').resize((80, 80)))
     round_image = ImageTk.PhotoImage(Image.open('./resource/circle.png').resize((80, 80)))
     background_image = ImageTk.PhotoImage(Image.open('./resource/background.png').resize((80, 80)))
@@ -134,7 +149,7 @@ def start_game(player1, player2):
     for i in range(3):
         position_x = 5
         for j in range(3):
-            button_set[i][j] = ttk.Button(canvas, image=background_image, command= lambda i=i, j=j : move_selected(root, button_set[i][j], i, j))
+            button_set[i][j] = ttk.Button(canvas, image=background_image, command= lambda i=i, j=j : move_selected(i, j))
             canvas.create_window(position_x, position_y, anchor='nw', window=button_set[i][j])
             position_x += 90
         position_y += 90
@@ -151,6 +166,9 @@ def start_game(player1, player2):
     result.grid(row=2, column=0)
 
     counter = 0
+    if player1 == 'computer':
+        computer_played = True
+        computer_moves()
     root.mainloop()
 
 
@@ -166,6 +184,6 @@ else:
     player2 = 'you'
 player1_moves = set()
 player2_moves = set()
-remaining_moves = set()
+remaining_moves = [(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2)] 
 
 start_game(player1, player2)
