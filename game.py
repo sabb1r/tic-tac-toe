@@ -4,62 +4,12 @@ from PIL import Image, ImageTk
 import random
 import time
 
-def initiate():
-
-    def player_select(player_info):
-        opponent.set(player_info)
-        if player_info == 'human':
-            usr_btn.state(['disabled'])
-            computer_btn.state(['!disabled'])
-        else:
-            usr_btn.state(['!disabled'])
-            computer_btn.state(['disabled'])
-
+def create_window():
     root = Tk()
     root.title('Tic Tac Toe')
-    content = ttk.Frame(root, width=500, height=400)
+    content = ttk.Frame(root, width=600, height=400)
     content.grid(row=0, column=0, sticky=NSEW)
 
-    opponent_lbl = ttk.Label(content, text='Choose your opponent')
-    opponent_lbl.grid(row=0, column=0, columnspan=3, sticky=NS)
-
-    btn_frame = ttk.Frame(content)
-    btn_frame.grid(row=1, column=0, columnspan=3, sticky=NSEW)
-
-    img_size = (80, 80)
-    usr_image = ImageTk.PhotoImage(Image.open('./resource/user.png').resize(img_size))
-    computer_image = ImageTk.PhotoImage(Image.open('./resource/computer.png').resize(img_size))
-    global opponent
-    opponent = StringVar()
-    usr_btn = ttk.Button(btn_frame, image=usr_image, command=lambda: player_select('human'))
-    computer_btn = ttk.Button(btn_frame, image=computer_image, command=lambda: player_select('computer'))
-    usr_btn.grid(row=0, column=0, sticky=NSEW)
-    computer_btn.grid(row=0, column=1, sticky=NSEW)
-
-    mode_lbl = ttk.Label(content, text='Select Mode:')
-    mode_lbl.grid(row=2, column=0, sticky=W)
-    global mode
-    mode = StringVar()
-    easy_btn = ttk.Radiobutton(content, text='Easy', variable=mode, value='easy')
-    hard_btn = ttk.Radiobutton(content, text='Hard', variable=mode, value='hard')
-    easy_btn.grid(row=2, column=1, sticky=E)
-    hard_btn.grid(row=2, column=2, sticky=E)
-
-    first_player_lbl = ttk.Label(content, text='Will you play first?')
-    first_player_lbl.grid(row=3, column=0, sticky=W)
-    global first_player
-    first_player = StringVar()
-    yes_btn = ttk.Radiobutton(content, text='Yes', variable=first_player, value='Yes')
-    no_btn = ttk.Radiobutton(content, text='No', variable=first_player, value='No')
-    yes_btn.grid(row=3, column=1, sticky=E)
-    no_btn.grid(row=3, column=2, sticky=E)
-
-    confirm_btn = ttk.Button(content, text='Confirm', command=root.destroy)
-    confirm_btn.grid(row=4, column=2, sticky=E)
-
-    btn_frame.columnconfigure(0, weight=2)
-    btn_frame.columnconfigure(1, weight=2)
-    btn_frame.rowconfigure(0, weight=2)
     content.columnconfigure(0, weight=2)
     content.columnconfigure(1, weight=2)
     content.columnconfigure(2, weight=2)
@@ -71,10 +21,67 @@ def initiate():
     root.columnconfigure(0, weight=2)
     root.rowconfigure(0, weight=2)
 
-    root.mainloop()
+    return root
 
+def initiate(root):
 
-def start_game(player1, player2):
+    def player_select(player_info):
+        opponent.set(player_info)
+        if player_info == 'human':
+            usr_btn.state(['disabled'])
+            computer_btn.state(['!disabled'])
+        else:
+            usr_btn.state(['!disabled'])
+            computer_btn.state(['disabled'])
+    
+    def close_initial_window():
+        for child in content.winfo_children():
+            child.destroy()
+        start_game(root)
+    
+    content = root.winfo_children()[0]
+
+    opponent_lbl = ttk.Label(content, text='Choose your opponent')
+    opponent_lbl.grid(row=0, column=0, columnspan=3, sticky=NS)
+
+    btn_frame = ttk.Frame(content)
+    btn_frame.grid(row=1, column=0, columnspan=3, sticky=NSEW)
+
+    # global opponent
+    # opponent = StringVar()
+    usr_btn = ttk.Button(btn_frame, image=usr_image, command=lambda: player_select('human'))
+    computer_btn = ttk.Button(btn_frame, image=computer_image, command=lambda: player_select('computer'))
+    usr_btn.grid(row=0, column=0, sticky=NSEW)
+    computer_btn.grid(row=0, column=1, sticky=NSEW)
+
+    mode_lbl = ttk.Label(content, text='Select Mode:')
+    mode_lbl.grid(row=2, column=0, sticky=W)
+
+    # global mode
+    # mode = StringVar()
+    easy_btn = ttk.Radiobutton(content, text='Easy', variable=mode, value='easy')
+    hard_btn = ttk.Radiobutton(content, text='Hard', variable=mode, value='hard')
+    easy_btn.grid(row=2, column=1, sticky=E)
+    hard_btn.grid(row=2, column=2, sticky=E)
+
+    first_player_lbl = ttk.Label(content, text='Will you play first?')
+    first_player_lbl.grid(row=3, column=0, sticky=W)
+
+    # global first_player
+    # player1 = StringVar()
+    yes_btn = ttk.Radiobutton(content, text='Yes', variable=first_player, value='Yes')
+    no_btn = ttk.Radiobutton(content, text='No', variable=first_player, value='No')
+    yes_btn.grid(row=3, column=1, sticky=E)
+    no_btn.grid(row=3, column=2, sticky=E)
+
+    confirm_btn = ttk.Button(content, text='Confirm', command= close_initial_window)
+    confirm_btn.grid(row=4, column=2, sticky=E)
+
+    btn_frame.columnconfigure(0, weight=2)
+    btn_frame.columnconfigure(1, weight=2)
+    btn_frame.rowconfigure(0, weight=2)
+    
+def start_game(root):
     def is_winner(position_set):
         if len(position_set) < 3:
             return False
@@ -92,59 +99,67 @@ def start_game(player1, player2):
 
     def move_selected(pos_x, pos_y):
         nonlocal counter
-        nonlocal result
+        nonlocal result_status
+        nonlocal computer_played
+        # global remaining_moves
         btn = button_set[pos_x][pos_y]
+
         if counter % 2:
             btn['image'] = round_image
+            btn.state(['disabled'])
             player2_moves.add((pos_x, pos_y))
             if is_winner(player2_moves):
-               result['text'] = 'Player 2 is winner' 
+               result_status['text'] = 'Player 2 is winner' 
+               return
+            #    draw_victory_line()
         else:
             btn['image'] = cross_image
+            btn.state(['disabled'])
             player1_moves.add((pos_x, pos_y))
             if is_winner(player1_moves):
-                result['text'] = 'Player 1 is winner'
-        btn.state(['disabled'])
+                result_status['text'] = 'Player 1 is winner'
+                # draw_victory_line()
+                return
         remaining_moves.remove((pos_x, pos_y))
         counter += 1
         if counter == 9:
-            result['text'] = 'Match is drawn'
+            result_status['text'] = 'Match is drawn'
+
         if player1 == 'computer' or player2 == 'computer':
-            computer_moves()
+            if not computer_played:
+                computer_moves()
+            else:
+                computer_played = False
 
     def computer_moves():
         # time.sleep(2)
-        if mode == 'easy':
+        nonlocal computer_played
+        computer_played = True
+        if mode.get() == 'easy':
             selection = random.choice(remaining_moves)
             btn = button_set[selection[0]][selection[1]]
             btn.invoke()
         else:
             pass
 
+    def draw_victory_line():
+        # transparent_frame = ttk.Frame(root)
+        # transparent_frame['height'], transparent_frame['width'] = content['height'], content['width']
+        pass
 
-
-    root = Tk()
-    root.title('Tic Tac Toe')
-
-    content = ttk.Frame(root)
-    content.grid(row=0, column=0, sticky=NSEW)
-
+    content = root.winfo_children()[0]
     btn_frame = ttk.Frame(content, height=300, width=300)
     btn_frame.grid(row=0, column=0, rowspan=3, columnspan=3, sticky=NSEW)
 
     canvas = Canvas(btn_frame, height=275, width=275)
     canvas.grid(row=0, column=0, sticky=NSEW)
 
-    cross_image = ImageTk.PhotoImage(Image.open('./resource/cross.png').resize((80, 80)))
-    round_image = ImageTk.PhotoImage(Image.open('./resource/circle.png').resize((80, 80)))
-    background_image = ImageTk.PhotoImage(Image.open('./resource/background.png').resize((80, 80)))
-
-
     button_set = [
             [None, None, None],
             [None, None, None],
             [None, None, None]
             ]
+    
     position_y = 5
     for i in range(3):
         position_x = 5
@@ -157,33 +172,53 @@ def start_game(player1, player2):
     info_frame = ttk.Frame(content, height=300, width=300)
     info_frame.grid(row=0, column=3, rowspan=3, sticky=NSEW)
 
-    first_player = ttk.Label(info_frame, text='First Player')
-    second_player = ttk.Button(info_frame, text='Second Player')
-    result = ttk.Label(info_frame, text='WHO WINS?')
+    first_player_status = ttk.Label(info_frame, text='First Player')
+    second_player_status = ttk.Button(info_frame, text='Second Player')
+    result_status = ttk.Label(info_frame, text='WHO WINS?')
 
-    first_player.grid(row=0, column=0)
-    second_player.grid(row=1, column=0)
-    result.grid(row=2, column=0)
+    first_player_status.grid(row=0, column=0)
+    second_player_status.grid(row=1, column=0)
+    result_status.grid(row=2, column=0)
 
+    if first_player.get() == 'Yes':
+        player1 = 'you'
+        player2 = opponent.get()
+    else:
+        player1 = opponent.get()
+        player2 = 'you'
+    
+    player1_moves = set()
+    player2_moves = set()
+    remaining_moves = [(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2)] 
     counter = 0
+    computer_played = False
+
     if player1 == 'computer':
-        computer_played = True
         computer_moves()
-    root.mainloop()
 
 
 
-initiate()
-opponent = opponent.get()
-mode = mode.get()
-if first_player.get() == 'Yes':
-    player1 = 'you'
-    player2 = opponent
-else:
-    player1 = opponent
-    player2 = 'you'
-player1_moves = set()
-player2_moves = set()
-remaining_moves = [(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2)] 
+# -- Main Program Starts Here -- #
+root = create_window()
 
-start_game(player1, player2)
+img_size = (80, 80)
+usr_image = ImageTk.PhotoImage(Image.open('./resource/user.png').resize(img_size))
+computer_image = ImageTk.PhotoImage(Image.open('./resource/computer.png').resize(img_size))
+cross_image = ImageTk.PhotoImage(Image.open('./resource/cross.png').resize((80, 80)))
+round_image = ImageTk.PhotoImage(Image.open('./resource/circle.png').resize(img_size))
+background_image = ImageTk.PhotoImage(Image.open('./resource/background.png').resize(img_size))
+opponent = StringVar()
+mode = StringVar()
+first_player = StringVar()
+
+initiate(root)
+
+root.mainloop()
+
+
+
+
+
+
+
+# start_game(player1, player2)
