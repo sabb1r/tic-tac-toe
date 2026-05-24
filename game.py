@@ -46,8 +46,6 @@ def initiate(root):
     btn_frame = ttk.Frame(content)
     btn_frame.grid(row=1, column=0, columnspan=3, sticky=NSEW)
 
-    # global opponent
-    # opponent = StringVar()
     usr_btn = ttk.Button(btn_frame, image=usr_image, command=lambda: player_select('human'))
     computer_btn = ttk.Button(btn_frame, image=computer_image, command=lambda: player_select('computer'))
     usr_btn.grid(row=0, column=0, sticky=NSEW)
@@ -56,8 +54,6 @@ def initiate(root):
     mode_lbl = ttk.Label(content, text='Select Mode:')
     mode_lbl.grid(row=2, column=0, sticky=W)
 
-    # global mode
-    # mode = StringVar()
     easy_btn = ttk.Radiobutton(content, text='Easy', variable=mode, value='easy')
     hard_btn = ttk.Radiobutton(content, text='Hard', variable=mode, value='hard')
     easy_btn.grid(row=2, column=1, sticky=E)
@@ -66,8 +62,6 @@ def initiate(root):
     first_player_lbl = ttk.Label(content, text='Will you play first?')
     first_player_lbl.grid(row=3, column=0, sticky=W)
 
-    # global first_player
-    # player1 = StringVar()
     yes_btn = ttk.Radiobutton(content, text='Yes', variable=first_player, value='Yes')
     no_btn = ttk.Radiobutton(content, text='No', variable=first_player, value='No')
     yes_btn.grid(row=3, column=1, sticky=E)
@@ -82,47 +76,48 @@ def initiate(root):
     
 def start_game(root):
     def is_winner(position_set):
-        if len(position_set) < 3:
+        if len(position_set) >= 3:
+            for i in range(3):
+                row = [x for x in position_set if x[0] == i]
+                col = [x for x in position_set if x[1] == i]
+                if len(row) == 3:
+                    return (True, 'r', i)
+                elif len(col) == 3:
+                    return (True, 'c', i)
+            if (1, 1) in position_set:
+                if (0, 0) in position_set and (2, 2) in position_set:
+                    return (True, 'd', 1)
+                elif (0, 2) in position_set and (2, 0) in position_set:
+                    return (True, 'd', 2)
             return (False, '', 0)
-        for i in range(3):
-            row = [x for x in position_set if x[0] == i]
-            col = [x for x in position_set if x[1] == i]
-            if len(row) == 3:
-                return (True, 'r', i)
-            elif len(col) == 3:
-                return (True, 'c', i)
-        if (1, 1) in position_set:
-            if (0, 0) in position_set and (2, 2) in position_set:
-                return (True, 'd', 1)
-            elif (0, 2) in position_set and (2, 0) in position_set:
-                return (True, 'd', 2)
-        return (False, '', 0)
+        else:
+            return (False, '', 0)
 
     def move_selected(pos_x, pos_y):
         nonlocal counter
         nonlocal result_status
         nonlocal computer_played
-        # global remaining_moves
-        btn = button_set[pos_x][pos_y]
 
+        btn = button_set[pos_x][pos_y]
         if counter % 2:
-            btn['image'] = round_image
-            btn.state(['disabled'])
-            player2_moves.add((pos_x, pos_y))
-            winner, pattern, number = is_winner(player2_moves)
-            if winner:
-               winner_celebration('Player 2')
-               return
+            img = round_image
+            player = 'Player 2'
+            moves = player2_moves
         else:
-            btn['image'] = cross_image
-            btn.state(['disabled'])
-            player1_moves.add((pos_x, pos_y))
-            winner, pattern, number = is_winner(player1_moves)
-            if winner:
-                winner_celebration('Player 1')
-                return
+            img = cross_image
+            player = 'Player 1'
+            moves = player1_moves
+        
+        btn['image'] = img
+        btn.state(['disabled'])
+        moves.add((pos_x, pos_y))
+        winner, pattern, number = is_winner(moves)
+
+        if winner:
+            winner_celebration(player)
             
         remaining_moves.remove((pos_x, pos_y))
+
         counter += 1
         if counter == 9:
             result_status['text'] = 'Match is drawn'
@@ -134,7 +129,6 @@ def start_game(root):
                 computer_played = False
 
     def computer_moves():
-        # time.sleep(2)
         nonlocal computer_played
         computer_played = True
         if mode.get() == 'easy':
@@ -145,7 +139,7 @@ def start_game(root):
             pass
 
     def winner_celebration(player):
-        result_status['text'] = '{} is winner'.format(player)
+        result_status['text'] = '{} is winner!!'.format(player)
         for x, y in remaining_moves:
                     button_set[x][y].state(['disabled'])
 
@@ -164,7 +158,6 @@ def start_game(root):
             btn = ttk.Button(btn_frame, image=background_image, command= lambda i=i, j=j: move_selected(i, j))
             button_set[i][j] = btn
             btn.grid(row=i, column=j, sticky=NSEW)
-
 
     info_frame = ttk.Frame(content, height=300, width=300)
     info_frame.grid(row=0, column=3, rowspan=3, sticky=NSEW)
