@@ -2,7 +2,6 @@ from tkinter import *
 from tkinter import ttk
 from PIL import Image, ImageTk
 import random
-import time
 
 def create_window():
     root = Tk()
@@ -84,18 +83,20 @@ def initiate(root):
 def start_game(root):
     def is_winner(position_set):
         if len(position_set) < 3:
-            return False
+            return (False, '', 0)
         for i in range(3):
             row = [x for x in position_set if x[0] == i]
             col = [x for x in position_set if x[1] == i]
-            if len(row) == 3 or len(col) == 3:
-                return True
+            if len(row) == 3:
+                return (True, 'r', i)
+            elif len(col) == 3:
+                return (True, 'c', i)
         if (1, 1) in position_set:
             if (0, 0) in position_set and (2, 2) in position_set:
-                return True
+                return (True, 'd', 1)
             elif (0, 2) in position_set and (2, 0) in position_set:
-                return True
-        return False
+                return (True, 'd', 2)
+        return (False, '', 0)
 
     def move_selected(pos_x, pos_y):
         nonlocal counter
@@ -108,18 +109,19 @@ def start_game(root):
             btn['image'] = round_image
             btn.state(['disabled'])
             player2_moves.add((pos_x, pos_y))
-            if is_winner(player2_moves):
-               result_status['text'] = 'Player 2 is winner' 
+            winner, pattern, number = is_winner(player2_moves)
+            if winner:
+               winner_celebration('Player 2')
                return
-            #    draw_victory_line()
         else:
             btn['image'] = cross_image
             btn.state(['disabled'])
             player1_moves.add((pos_x, pos_y))
-            if is_winner(player1_moves):
-                result_status['text'] = 'Player 1 is winner'
-                # draw_victory_line()
+            winner, pattern, number = is_winner(player1_moves)
+            if winner:
+                winner_celebration('Player 1')
                 return
+            
         remaining_moves.remove((pos_x, pos_y))
         counter += 1
         if counter == 9:
@@ -142,17 +144,14 @@ def start_game(root):
         else:
             pass
 
-    def draw_victory_line():
-        # transparent_frame = ttk.Frame(root)
-        # transparent_frame['height'], transparent_frame['width'] = content['height'], content['width']
-        pass
+    def winner_celebration(player):
+        result_status['text'] = '{} is winner'.format(player)
+        for x, y in remaining_moves:
+                    button_set[x][y].state(['disabled'])
 
     content = root.winfo_children()[0]
     btn_frame = ttk.Frame(content, height=300, width=300)
     btn_frame.grid(row=0, column=0, rowspan=3, columnspan=3, sticky=NSEW)
-
-    canvas = Canvas(btn_frame, height=275, width=275)
-    canvas.grid(row=0, column=0, sticky=NSEW)
 
     button_set = [
             [None, None, None],
@@ -160,14 +159,12 @@ def start_game(root):
             [None, None, None]
             ]
     
-    position_y = 5
     for i in range(3):
-        position_x = 5
         for j in range(3):
-            button_set[i][j] = ttk.Button(canvas, image=background_image, command= lambda i=i, j=j : move_selected(i, j))
-            canvas.create_window(position_x, position_y, anchor='nw', window=button_set[i][j])
-            position_x += 90
-        position_y += 90
+            btn = ttk.Button(btn_frame, image=background_image, command= lambda i=i, j=j: move_selected(i, j))
+            button_set[i][j] = btn
+            btn.grid(row=i, column=j, sticky=NSEW)
+
 
     info_frame = ttk.Frame(content, height=300, width=300)
     info_frame.grid(row=0, column=3, rowspan=3, sticky=NSEW)
@@ -196,8 +193,6 @@ def start_game(root):
     if player1 == 'computer':
         computer_moves()
 
-
-
 # -- Main Program Starts Here -- #
 root = create_window()
 
@@ -214,11 +209,3 @@ first_player = StringVar()
 initiate(root)
 
 root.mainloop()
-
-
-
-
-
-
-
-# start_game(player1, player2)
