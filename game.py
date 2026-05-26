@@ -116,25 +116,67 @@ def initiate(root):
 
     return opponent.get(), mode.get(), first_player.get()
     
-
-
 def computer_play():
     if mode == 'easy':
         btn_pos_x, btn_pos_y = random.choice(list(remaining_moves))
         btn = button_set[btn_pos_x][btn_pos_y]
         btn.invoke()
+    elif mode == 'medium':
+        computer_win_position = winning_position(current_player)
+        if computer_win_position:
+            btn = button_set[computer_win_position[0]][computer_win_position[1]]
+            btn.invoke()
+        opponent_win_position = winning_position(next_player)
+        
+    else:
+        pass
 
-def human_play():
-    if opponent == 'Computer':
-        root.after(2000, computer_play)
+def winning_position(player):
+    # Winning position check for the given player
+    answer = tuple()
+    for i in range(2):
+        # same_row_pos = {x for x in player.moves if x[0] == i}
+        # same_col_pos = {x for x in player.moves if x[1] == i}
+        moves = player.moves
+        probable_row_pos = ROWS[i].difference(moves)
+        probable_col_pos = COLUMNS[i].difference(moves)
+        if i < 2:
+            probable_diag_pos = DIAGS[i].difference(moves)
+        if len(probable_row_pos) == 1:
+            if button_set[probable_row_pos[0]][probable_col_pos[1]].instate(['!disabled']):
+                answer = probable_row_pos
+                break
+        elif len(probable_col_pos) == 1:
+            if button_set[probable_col_pos[0]][probable_col_pos[1]].instate(['!disabled']):
+                answer = probable_col_pos
+                break
+        elif i < 2:
+            if button_set[probable_diag_pos[0]][probable_diag_pos[1]].instate(['!disabled']):
+                answer = probable_diag_pos
+                break
+    return answer
+
+def toggle_player():
+    global current_player
+    global next_player
+    if current_player.position == 'First Player':
+        next_player = player1
+        current_player = player2
+    else:
+        next_player = player2
+        current_player = player1
 
 def move_selected(btn_pos_x, btn_pos_y):
+    global current_player
+    global next_player
+    global remaining_moves
+
     if current_player.position == 'First Player':
         btn_img = cross_image
-        next_player = player2
+        # next_player = player2
     else:
         btn_img = round_image
-        next_player = player1
+        # next_player = player1
 
     btn = button_set[btn_pos_x][btn_pos_y]
     btn['image'] = btn_img
@@ -144,33 +186,37 @@ def move_selected(btn_pos_x, btn_pos_y):
 
     if is_winner(current_player):
         result_status['text'] = current_player.name
+        for (btn_pos_x, btn_pos_y) in remaining_moves:
+            button_set[btn_pos_x][btn_pos_y].state(['disabled'])
+        return 
     
     if not remaining_moves:
         result_status['text'] = 'The Match is Drawn'
+        return
     
-    current_player = next_player
-    if current_player.name != 'Computer':
-        human_play()
+    # current_player = next_player
 
+    toggle_player()
+    
+    if current_player.name == 'Computer':
+        root.after(500, computer_play)
 
 def is_winner(player):
     moves = player.moves
     if len(moves) < 3:
         return False
     for i in range(3):
-        if not rows[i].difference(moves):
+        if not ROWS[i].difference(moves):
             return True
-        if not columns[i].difference(moves):
+        if not COLUMNS[i].difference(moves):
             return True
         if i == 2:
             continue
         else:
-            if not diags[i].difference(moves):
+            if not DIAGS[i].difference(moves):
                 return True
     return False
     
-
-
 # -- Main Program Starts Here -- #
 root = create_window()
 
@@ -188,12 +234,11 @@ else:
 player1 = Player(first_player, 'First Player')
 player2 = Player(second_player, 'Second Player')
 remaining_moves = {(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2)}
-rows = [{(0, 0), (0, 1), (0, 2)}, {(1, 0), (1, 1), (1, 2)}, {(2, 0), (2, 1), (2, 2)}]
-columns = [{(0, 0), (1, 0), (2, 0)}, {(0, 1), (1, 1), (2, 1)}, {(0, 2), (1, 2), (2, 2)}]
-diags = [{(0, 0), (1, 1), (2, 2)}, {(0, 2), (1, 1), (2, 0)}]
+ROWS = [{(0, 0), (0, 1), (0, 2)}, {(1, 0), (1, 1), (1, 2)}, {(2, 0), (2, 1), (2, 2)}]
+COLUMNS = [{(0, 0), (1, 0), (2, 0)}, {(0, 1), (1, 1), (2, 1)}, {(0, 2), (1, 2), (2, 2)}]
+DIAGS = [{(0, 0), (1, 1), (2, 2)}, {(0, 2), (1, 1), (2, 0)}]
 
 root = create_window()
-
 content = root.winfo_children()[0]
 
 btn_frame = ttk.Frame(content, height=300, width=300)
@@ -226,8 +271,8 @@ result_status.grid(row=2, column=0)
 
 
 current_player = player1
-if first_player == 'Computer':
+next_player = player2
+if current_player.name == 'Computer':
     computer_play()
-
 
 root.mainloop()
