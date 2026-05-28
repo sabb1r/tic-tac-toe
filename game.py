@@ -3,29 +3,90 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import random
 
-class Player():
-    def __init__(self, name, position):
+class Point():
+    ROWS = {0: ((0, 0), (0, 1), (0, 2)), 1: ((1, 0), (1, 1), (1, 2)), 2: ((2, 0), (2, 1), (2, 2))}
+    COLUMNS = {0: ((0, 0), (1, 0), (2, 0)), 1: ((0, 1), (1, 1), (2, 1)), 2: ((0, 2), (1, 2), (2, 2))}
+    DIAGS = {0: ((0, 0), (1, 1), (2, 2)), 1: ((0, 2), (1, 1), (2, 0))}
+    CORNERS = {(0, 0), (0, 2), (2, 0), (2, 2)}
+    REMAINING_MOVES = {(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2)}
+    VECTORS = {
+            (0, 0): {ROWS[0], COLUMNS[0], DIAGS[0]}, 
+            (0, 1): {ROWS[0], COLUMNS[1]},
+            (0, 2): {ROWS[0], COLUMNS[2], DIAGS[1]},
+            (1, 0): {ROWS[1], COLUMNS[0]},
+            (1, 1): {ROWS[1], COLUMNS[1], DIAGS[0], DIAGS[1]},
+            (1, 2): {ROWS[1], COLUMNS[2]},
+            (2, 0): {ROWS[2], COLUMNS[0], DIAGS[1]},
+            (2, 1): {ROWS[2], COLUMNS[1]},
+            (2, 2): {ROWS[2], COLUMNS[2], DIAGS[0]}
+            }
+
+class Player(Point):
+    def __init__(self, name, position, image):
         self.name = name
         self.position = position
+        self.image = image
         self.own_moves = []
         self.own_vector = set()
         self.opponent_moves = []
         self.opponent_vector = set()
         self.win_vector = set()
+        self.winning_move = tuple()
     
     def add_move(self, move):
         self.own_moves.append(move)
-        self.own_vector = self.own_vector.union(VECTORS[move])
+        self.own_vector = self.own_vector.union(self.VECTORS[move])
         self.win_vector = self.own_vector.difference(self.opponent_vector)
+        self.winning_move_calculation()
     
     def add_opponent_move(self, move):
         self.opponent_moves.append(move)
-        self.opponent_vector = self.opponent_vector.union(VECTORS[move])
+        self.opponent_vector = self.opponent_vector.union(self.VECTORS[move])
         self.win_vector = self.own_vector.difference(self.opponent_vector)
+        self.winning_move_calculation()
+
+    def winning_move_calculation(self):
+        if len(self.own_moves) >= 2:
+            for i in range(3):
+                moves = self.own_moves
+                probable_row_pos = list(set(self.ROWS[i]).difference(moves))
+                probable_col_pos = list(set(self.COLUMNS[i]).difference(moves))
+                if i < 2:
+                    probable_diag_pos = list(set(self.DIAGS[i]).difference(moves))
+                if len(probable_row_pos) == 1:
+                    x, y = probable_row_pos[0]
+                    if button_set[x][y].instate(['!disabled']):
+                        self.winning_move = (x, y)
+                        break
+                elif len(probable_col_pos) == 1:
+                    x, y = probable_col_pos[0]
+                    if button_set[x][y].instate(['!disabled']):
+                        self.winning_move = (x, y)
+                        break
+                elif i < 2 and len(probable_diag_pos) == 1:
+                    x, y = probable_diag_pos[0]
+                    if button_set[x][y].instate(['!disabled']):
+                        self.winning_move = (x, y)
+                        break
+    
+    def is_winner(self):
+        if len(self.own_moves) < 3:
+            return False
+        for i in range(3):
+            if not set(self.ROWS[i]).difference(self.own_moves):
+                return True
+            if not set(self.COLUMNS[i]).difference(self.own_moves):
+                return True
+            if i == 2:
+                continue
+            else:
+                if not set(self.DIAGS[i]).difference(self.own_moves):
+                    return True
+        return False
     
     def __repr__(self):
         return 'Player Name: {}, Plays: {}'.format(self.name, self.position)
-
+    
 def create_window():
     root = Tk()
     root.title('Tic Tac Toe')
@@ -135,35 +196,39 @@ def distance(point1, point2):
 def computer_play():
     if mode == 'easy':
         push_random_btn()
-    elif mode == 'medium':
-        if not winning_move(current_player):
-            if not winning_move(next_player):
-                push_random_btn()
     else:
-        if not winning_move(current_player):
-            if not winning_move(next_player):
+        if current_player.winning_move:
+            x, y = current_player.winning_move
+            button_set[x][y].invoke()
+        elif next_player.winning_move:
+            x, y = next_player.winning_move
+            button_set[x][y].invoke()
+        else:
+            if mode == 'medium':
+                push_random_btn()
+            else:
                 if not current_player.own_moves and not current_player.opponent_moves:
-                    push_random_btn(CORNERS)
+                    push_random_btn(Point.CORNERS)
                 elif not current_player.own_moves and current_player.opponent_moves:
                     if button_set[1][1].instate(['!disabled']):
                         button_set[1][1].invoke()
                     else:
-                        push_random_btn(CORNERS)
+                        push_random_btn(Point.CORNERS)
                 else:
                     last_entry = current_player.own_moves[-1]
 
                     nearest_corner = []
 
-                    remaining_corners = CORNERS.difference(set(current_player.own_moves).union(set(next_player.own_moves)))
+                    remaining_corners = Point.CORNERS.difference(set(current_player.own_moves).union(set(next_player.own_moves)))
                     if len(remaining_corners) == 1:
                         optimum_point = remaining_corners.pop()
                     else:
-                        for point in CORNERS.difference(set(current_player.own_moves)):
-                            for vector in current_player.win_vector:
-                                if point in vector:
-                                    break
-                            else:
-                                continue
+                        for point in remaining_corners:
+                            # for vector in current_player.win_vector:
+                            #     if point in vector:
+                            #         break
+                            # else:
+                            #     continue
                             d = distance(last_entry, point)
                             if round(d, 1) == 2.0:
                                 nearest_corner.append(point)
@@ -179,55 +244,16 @@ def computer_play():
                         elif len(nearest_corner) == 1:
                             optimum_point = nearest_corner[0]
                         else:
-                            optimum_point = random.choice(list(remaining_moves))
+                            optimum_point = random.choice(list(Point.REMAINING_MOVES))
                     
                     button_set[optimum_point[0]][optimum_point[1]].invoke()
                     
-def winning_position(player):
-    # Winning position check for the given player
-    answer = tuple()
-    if len(player.own_moves) < 2:
-        return answer
-    
-    for i in range(3):
-        moves = player.own_moves
-        probable_row_pos = list(set(ROWS[i]).difference(moves))
-        probable_col_pos = list(set(COLUMNS[i]).difference(moves))
-        if i < 2:
-            probable_diag_pos = list(set(DIAGS[i]).difference(moves))
-        if len(probable_row_pos) == 1:
-            x, y = probable_row_pos[0]
-            if button_set[x][y].instate(['!disabled']):
-                answer = probable_row_pos
-                break
-        elif len(probable_col_pos) == 1:
-            x, y = probable_col_pos[0]
-            if button_set[x][y].instate(['!disabled']):
-                answer = probable_col_pos
-                break
-        elif i < 2 and len(probable_diag_pos) == 1:
-            x, y = probable_diag_pos[0]
-            if button_set[x][y].instate(['!disabled']):
-                answer = probable_diag_pos
-                break
-    return answer
-
 def push_random_btn(moves=''):
     if not moves:
-        moves = remaining_moves
+        moves = Point.REMAINING_MOVES
     x, y = random.choice(list(moves))
     btn = button_set[x][y]
     btn.invoke()
-
-def winning_move(player):
-    win_position = winning_position(player)
-    if win_position:
-        x, y = win_position[0]
-        btn = button_set[x][y]
-        btn.invoke()
-        return True
-    else:
-        return False
 
 def toggle_player():
     global current_player
@@ -238,27 +264,22 @@ def toggle_player():
 def move_selected(btn_pos_x, btn_pos_y):
     global current_player
     global next_player
-    global remaining_moves
-
-    if current_player.position == 'First Player':
-        btn_img = cross_image
-    else:
-        btn_img = round_image
+    # global remaining_moves
 
     btn = button_set[btn_pos_x][btn_pos_y]
-    btn['image'] = btn_img
+    btn['image'] = current_player.image
     btn.state(['disabled'])
     current_player.add_move((btn_pos_x, btn_pos_y))
     next_player.add_opponent_move((btn_pos_x, btn_pos_y))
-    remaining_moves.remove((btn_pos_x, btn_pos_y))
+    Point.REMAINING_MOVES.remove((btn_pos_x, btn_pos_y))
 
-    if is_winner(current_player):
+    if current_player.is_winner():
         result_status['text'] = current_player.name
-        for (btn_pos_x, btn_pos_y) in remaining_moves:
+        for (btn_pos_x, btn_pos_y) in Point.REMAINING_MOVES:
             button_set[btn_pos_x][btn_pos_y].state(['disabled'])
         return 
     
-    if not remaining_moves:
+    if not Point.REMAINING_MOVES:
         result_status['text'] = 'The Match is Drawn'
         return
 
@@ -267,21 +288,6 @@ def move_selected(btn_pos_x, btn_pos_y):
     if current_player.name == 'Computer':
         root.after(500, computer_play)
 
-def is_winner(player):
-    moves = player.own_moves
-    if len(moves) < 3:
-        return False
-    for i in range(3):
-        if not set(ROWS[i]).difference(moves):
-            return True
-        if not set(COLUMNS[i]).difference(moves):
-            return True
-        if i == 2:
-            continue
-        else:
-            if not set(DIAGS[i]).difference(moves):
-                return True
-    return False
     
 # -- Main Program Starts Here -- #
 root = create_window()
@@ -297,36 +303,6 @@ if first_player != 'You':
 else:
     second_player = opponent
 
-player1 = Player(first_player, 'First Player')
-player2 = Player(second_player, 'Second Player')
-remaining_moves = {(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (2, 0), (2, 1), (2, 2)}
-ROWS = {
-    0: ((0, 0), (0, 1), (0, 2)),
-    1: ((1, 0), (1, 1), (1, 2)),
-    2: ((2, 0), (2, 1), (2, 2))
-}
-COLUMNS = {
-    0: ((0, 0), (1, 0), (2, 0)),
-    1: ((0, 1), (1, 1), (2, 1)),
-    2: ((0, 2), (1, 2), (2, 2))
-}
-DIAGS = {
-    0: ((0, 0), (1, 1), (2, 2)),
-    1: ((0, 2), (1, 1), (2, 0))
-}
-CORNERS = {(0, 0), (0, 2), (2, 0), (2, 2)}
-VECTORS = {
-    (0, 0): {ROWS[0], COLUMNS[0], DIAGS[0]}, 
-    (0, 1): {ROWS[0], COLUMNS[1]},
-    (0, 2): {ROWS[0], COLUMNS[2], DIAGS[1]},
-    (1, 0): {ROWS[1], COLUMNS[0]},
-    (1, 1): {ROWS[1], COLUMNS[1], DIAGS[0], DIAGS[1]},
-    (1, 2): {ROWS[1], COLUMNS[2]},
-    (2, 0): {ROWS[2], COLUMNS[0], DIAGS[1]},
-    (2, 1): {ROWS[2], COLUMNS[1]},
-    (2, 2): {ROWS[2], COLUMNS[2], DIAGS[0]}
-}
-
 root = create_window()
 content = root.winfo_children()[0]
 
@@ -340,6 +316,9 @@ button_set = [[None, None, None],
 cross_image = ImageTk.PhotoImage(Image.open('./resource/cross.png').resize(img_size))
 round_image = ImageTk.PhotoImage(Image.open('./resource/circle.png').resize(img_size))
 background_image = ImageTk.PhotoImage(Image.open('./resource/background.png').resize(img_size))
+
+player1 = Player(first_player, 'First Player', cross_image)
+player2 = Player(second_player, 'Second Player', round_image)
     
 for i in range(3):
     for j in range(3):
