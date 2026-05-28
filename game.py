@@ -49,10 +49,10 @@ class Player(Point):
         if len(self.own_moves) >= 2:
             for i in range(3):
                 moves = self.own_moves
-                probable_row_pos = list(set(self.ROWS[i]).difference(moves))
-                probable_col_pos = list(set(self.COLUMNS[i]).difference(moves))
+                probable_row_pos = list(set(Point.ROWS[i]).difference(moves))
+                probable_col_pos = list(set(Point.COLUMNS[i]).difference(moves))
                 if i < 2:
-                    probable_diag_pos = list(set(self.DIAGS[i]).difference(moves))
+                    probable_diag_pos = list(set(Point.DIAGS[i]).difference(moves))
                 if len(probable_row_pos) == 1:
                     x, y = probable_row_pos[0]
                     if button_set[x][y].instate(['!disabled']):
@@ -68,19 +68,23 @@ class Player(Point):
                     if button_set[x][y].instate(['!disabled']):
                         self.winning_move = (x, y)
                         break
+            else:
+                self.winning_move = tuple()
+        else:
+            self.winning_move = tuple()
     
     def is_winner(self):
         if len(self.own_moves) < 3:
             return False
         for i in range(3):
-            if not set(self.ROWS[i]).difference(self.own_moves):
+            if not set(Point.ROWS[i]).difference(self.own_moves):
                 return True
-            if not set(self.COLUMNS[i]).difference(self.own_moves):
+            if not set(Point.COLUMNS[i]).difference(self.own_moves):
                 return True
             if i == 2:
                 continue
             else:
-                if not set(self.DIAGS[i]).difference(self.own_moves):
+                if not set(Point.DIAGS[i]).difference(self.own_moves):
                     return True
         return False
     
