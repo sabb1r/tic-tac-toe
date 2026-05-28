@@ -93,6 +93,15 @@ class Player(Point):
     
 def create_window():
     root = Tk()
+    win_w, win_h = 300, 350 
+
+    # Calculate x and y coordinates to center the window
+    x = (root.winfo_screenwidth() // 2) - (win_w // 2)
+    y = (root.winfo_screenheight() // 2) - (win_h // 2)
+
+    # Set the geometry
+    root.geometry(f'{win_w}x{win_h}+{x}+{y}')
+
     root.title('Tic Tac Toe')
     content = ttk.Frame(root, width=600, height=400)
     content.grid(row=0, column=0, sticky=NSEW)
@@ -115,24 +124,36 @@ def initiate(root):
     def opponent_selection(player_info):
         opponent.set(player_info)
         if player_info == 'Player2':
+            computer_btn.destroy()
             usr_btn.state(['disabled'])
-            computer_btn.state(['!disabled'])
+            usr_btn.grid(row=0, column=0, columnspan=2, sticky=NSEW)
         else:
-            usr_btn.state(['!disabled'])
+            usr_btn.destroy()
             computer_btn.state(['disabled'])
-            mode_selection()
+            computer_btn.grid(row=0, column=0, columnspan=2, sticky=NSEW)
+
+        first_player_selection()
+    
+    def first_player_selection():
+        first_player_lbl = ttk.Label(content, text='Who will play first?')
+        first_player_lbl.grid(row=2, column=0, sticky=W)
+
+        yes_btn = ttk.Radiobutton(content, text='You', variable=first_player, value='You', command=mode_selection)
+        no_btn = ttk.Radiobutton(content, text='Opponent', variable=first_player, value='Opponent', command=mode_selection)
+        yes_btn.grid(row=2, column=1, sticky=E)
+        no_btn.grid(row=2, column=2, sticky=W)
     
     def mode_selection():
-        # nonlocal mode
-        mode_lbl = ttk.Label(content, text='Select Mode:')
-        mode_lbl.grid(row=2, column=0, sticky=W)
+        if opponent.get() == 'Computer':
+            mode_lbl = ttk.Label(content, text='Select Mode:')
+            mode_lbl.grid(row=3, column=0, sticky=W)
 
-        easy_btn = ttk.Radiobutton(content, text='Easy', variable=mode, value='easy')
-        medium_btn = ttk.Radiobutton(content, text='Medium', variable=mode, value='medium')
-        hard_btn = ttk.Radiobutton(content, text='Hard', variable=mode, value='hard')
-        easy_btn.grid(row=2, column=1, sticky=E)
-        medium_btn.grid(row=2, column=2, sticky=E)
-        hard_btn.grid(row=2, column=3, sticky=E)
+            easy_btn = ttk.Radiobutton(content, text='Easy', variable=mode, value='easy')
+            medium_btn = ttk.Radiobutton(content, text='Medium', variable=mode, value='medium')
+            hard_btn = ttk.Radiobutton(content, text='Hard', variable=mode, value='hard')
+            easy_btn.grid(row=3, column=1, sticky=E)
+            medium_btn.grid(row=3, column=2, sticky=E)
+            hard_btn.grid(row=3, column=3, sticky=E)
     
     def return_root():
         opponent_val = opponent.get()
@@ -142,46 +163,48 @@ def initiate(root):
                     if first_player.get():
                         root.destroy()
                     else:
-                        ttk.Label(content, text='First Player is not selected').grid(row=4, column=0, columnspan=3, sticky=EW)
+                        ttk.Label(content, text='First Player is not selected').grid(row=4, column=0, columnspan=4, sticky=EW)
                 else:
-                    ttk.Label(content, text='Game Mode and/or First Player is not selected').grid(row=4, column=0, columnspan=3, sticky=EW)
+                    ttk.Label(content, text='Game Mode and/or First Player is not selected').grid(row=4, column=0, columnspan=4, sticky=EW)
             else:
                 if first_player.get():
                     root.destroy()
                 else:
-                    ttk.Label(content, text='First Player is not selected').grid(row=4, column=0, columnspan=3, sticky=EW)
+                    ttk.Label(content, text='First Player is not selected').grid(row=4, column=0, columnspan=4, sticky=EW)
         else:
             ttk.Label(content, text='Opponent player is not selected').grid(row=4, column=0, columnspan=3, sticky=EW)
-
+    
+    def cancel():
+        root.destroy()
+        nonlocal exit_status
+        exit_status = 1
      
     opponent = StringVar()
     mode = StringVar()
     first_player = StringVar()
+    exit_status = 0
 
+    root.overrideredirect(True)
     content = root.winfo_children()[0]
 
     opponent_lbl = ttk.Label(content, text='Choose your opponent')
-    opponent_lbl.grid(row=0, column=0, columnspan=3, sticky=NS)
+    opponent_lbl.grid(row=0, column=0, columnspan=4, sticky=NS)
 
     btn_frame = ttk.Frame(content)
-    btn_frame.grid(row=1, column=0, columnspan=3, sticky=NSEW)
+    btn_frame.grid(row=1, column=0, columnspan=4, sticky=NSEW)
 
     usr_btn = ttk.Button(btn_frame, image=usr_image, command=lambda: opponent_selection('Player2'))
     computer_btn = ttk.Button(btn_frame, image=computer_image, command=lambda: opponent_selection('Computer'))
     usr_btn.grid(row=0, column=0, sticky=NSEW)
     computer_btn.grid(row=0, column=1, sticky=NSEW)
 
-    first_player_lbl = ttk.Label(content, text='Who will play first move?')
-    first_player_lbl.grid(row=3, column=0, sticky=W)
-
-    yes_btn = ttk.Radiobutton(content, text='You', variable=first_player, value='You')
-    no_btn = ttk.Radiobutton(content, text='Opponent', variable=first_player, value='Opponent')
-    yes_btn.grid(row=3, column=1, sticky=E)
-    no_btn.grid(row=3, column=2, sticky=E)
-
-
-    confirm_btn = ttk.Button(content, text='Confirm', command= return_root)
+    confirm_btn = ttk.Button(content, text='Confirm', default='active', command= return_root)
+    root.bind('<Return>', lambda e: confirm_btn.invoke())
     confirm_btn.grid(row=5, column=2, sticky=E)
+
+
+    cancel_btn = ttk.Button(content, text='Close', command=cancel)
+    cancel_btn.grid(row=5, column=0, sticky=W)
 
     btn_frame.columnconfigure(0, weight=2)
     btn_frame.columnconfigure(1, weight=2)
@@ -192,7 +215,7 @@ def initiate(root):
     if first_player.get() == 'Opponent':
         first_player.set(opponent.get())
 
-    return opponent.get(), mode.get(), first_player.get()
+    return opponent.get(), mode.get(), first_player.get(), exit_status
 
 def distance(point1, point2):
     return pow((point2[0] - point1[0]) ** 2 + (point2[1] - point1[1]) ** 2, 0.5)
@@ -228,11 +251,6 @@ def computer_play():
                         optimum_point = remaining_corners.pop()
                     else:
                         for point in remaining_corners:
-                            # for vector in current_player.win_vector:
-                            #     if point in vector:
-                            #         break
-                            # else:
-                            #     continue
                             d = distance(last_entry, point)
                             if round(d, 1) == 2.0:
                                 nearest_corner.append(point)
@@ -262,13 +280,14 @@ def push_random_btn(moves=''):
 def toggle_player():
     global current_player
     global next_player
+    global who_will_play
 
     current_player, next_player = next_player, current_player
+    game_status['text'] = '{} will play now'.format(current_player.name)
 
 def move_selected(btn_pos_x, btn_pos_y):
     global current_player
     global next_player
-    # global remaining_moves
 
     btn = button_set[btn_pos_x][btn_pos_y]
     btn['image'] = current_player.image
@@ -278,20 +297,28 @@ def move_selected(btn_pos_x, btn_pos_y):
     Point.REMAINING_MOVES.remove((btn_pos_x, btn_pos_y))
 
     if current_player.is_winner():
-        result_status['text'] = current_player.name
+        if current_player.name == 'You':
+            game_status['text'] = 'Congratulations!!'
+            game_status['foreground'] = 'green'
+        elif current_player.name == 'Player2':
+            game_status['text'] = 'Player 2 wins'
+            game_status['foreground'] = 'brown'
+        elif current_player.name == 'Computer':
+            game_status['text'] = 'Oops! You are defeated by computer'
+            game_status['foreground'] = 'red'
         for (btn_pos_x, btn_pos_y) in Point.REMAINING_MOVES:
             button_set[btn_pos_x][btn_pos_y].state(['disabled'])
         return 
     
     if not Point.REMAINING_MOVES:
-        result_status['text'] = 'The Match is Drawn'
+        game_status['text'] = 'The Match is Drawn'
+        game_status['foreground'] = 'orange'
         return
 
     toggle_player()
     
     if current_player.name == 'Computer':
         root.after(500, computer_play)
-
     
 # -- Main Program Starts Here -- #
 root = create_window()
@@ -300,51 +327,49 @@ img_size = (80, 80)
 usr_image = ImageTk.PhotoImage(Image.open('./resource/user.png').resize(img_size))
 computer_image = ImageTk.PhotoImage(Image.open('./resource/computer.png').resize(img_size))
 
-opponent, mode, first_player = initiate(root)
+opponent, mode, first_player, exit_status = initiate(root)
+if not exit_status:
+    if first_player != 'You':
+        second_player = 'You'
+    else:
+        second_player = opponent
 
-if first_player != 'You':
-    second_player = 'You'
+    root = create_window()
+    content = root.winfo_children()[0]
+
+    btn_frame = ttk.Frame(content, height=300, width=300)
+    btn_frame.grid(row=0, column=0, rowspan=3, columnspan=3, sticky=NSEW)
+
+    button_set = [[None, None, None],
+                [None, None, None],
+                [None, None, None]]
+
+    cross_image = ImageTk.PhotoImage(Image.open('./resource/cross.png').resize(img_size))
+    round_image = ImageTk.PhotoImage(Image.open('./resource/circle.png').resize(img_size))
+    background_image = ImageTk.PhotoImage(Image.open('./resource/background.png').resize(img_size))
+
+    player1 = Player(first_player, 'First Player', cross_image)
+    player2 = Player(second_player, 'Second Player', round_image)
+        
+    for i in range(3):
+        for j in range(3):
+            btn = ttk.Button(btn_frame, image=background_image, command= lambda i=i, j=j: move_selected(i, j))
+            button_set[i][j] = btn
+            btn.grid(row=i, column=j, sticky=NSEW)
+
+    info_frame = ttk.Frame(content, height=300, width=300)
+    info_frame.grid(row=3, column=0, columnspan=3, sticky=NSEW)
+
+    game_status = ttk.Label(info_frame)
+    game_status.grid(row=0, column=0)
+
+    current_player = player1
+    next_player = player2
+    game_status['text'] = '{} will play now'.format(current_player.name)
+    if current_player.name == 'Computer':
+        computer_play()
+
+    root.mainloop()
 else:
-    second_player = opponent
-
-root = create_window()
-content = root.winfo_children()[0]
-
-btn_frame = ttk.Frame(content, height=300, width=300)
-btn_frame.grid(row=0, column=0, rowspan=3, columnspan=3, sticky=NSEW)
-
-button_set = [[None, None, None],
-            [None, None, None],
-            [None, None, None]]
-
-cross_image = ImageTk.PhotoImage(Image.open('./resource/cross.png').resize(img_size))
-round_image = ImageTk.PhotoImage(Image.open('./resource/circle.png').resize(img_size))
-background_image = ImageTk.PhotoImage(Image.open('./resource/background.png').resize(img_size))
-
-player1 = Player(first_player, 'First Player', cross_image)
-player2 = Player(second_player, 'Second Player', round_image)
-    
-for i in range(3):
-    for j in range(3):
-        btn = ttk.Button(btn_frame, image=background_image, command= lambda i=i, j=j: move_selected(i, j))
-        button_set[i][j] = btn
-        btn.grid(row=i, column=j, sticky=NSEW)
-
-info_frame = ttk.Frame(content, height=300, width=300)
-info_frame.grid(row=0, column=3, rowspan=3, sticky=NSEW)
-
-first_player_status = ttk.Label(info_frame, text='First Player')
-second_player_status = ttk.Label(info_frame, text='Second Player')
-result_status = ttk.Label(info_frame, text='WHO WINS?')
-
-first_player_status.grid(row=0, column=0)
-second_player_status.grid(row=1, column=0)
-result_status.grid(row=2, column=0)
-
-
-current_player = player1
-next_player = player2
-if current_player.name == 'Computer':
-    computer_play()
-
-root.mainloop()
+    # Do nothing
+    pass
