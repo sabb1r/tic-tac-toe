@@ -58,12 +58,12 @@ class Player(Point):
                     if button_set[x][y].instate(['!disabled']):
                         self.winning_move = (x, y)
                         break
-                elif len(probable_col_pos) == 1:
+                if len(probable_col_pos) == 1:
                     x, y = probable_col_pos[0]
                     if button_set[x][y].instate(['!disabled']):
                         self.winning_move = (x, y)
                         break
-                elif i < 2 and len(probable_diag_pos) == 1:
+                if i < 2 and len(probable_diag_pos) == 1:
                     x, y = probable_diag_pos[0]
                     if button_set[x][y].instate(['!disabled']):
                         self.winning_move = (x, y)
